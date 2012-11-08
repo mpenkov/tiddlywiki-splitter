@@ -29,13 +29,29 @@ class WikiParser(SGMLParser):
             self.current_tiddler["text"].append(data)
 
 def main():
-    import sys
-    wiki = open(sys.argv[1]).read().strip()
+    from optparse import OptionParser
+    parser = OptionParser(usage="%prog [options] wiki.html")
+    parser.add_option("-d", "--destination", dest="dest", default="txt", help="the directory to write text files to")
+    opts, args = parser.parse_args()
+    if not args:
+        parser.error("you must specify the path to the TiddlyWiki file")
+    wiki = open(args[0]).read().strip()
     parser = WikiParser()
     parser.feed(wiki)
-    print len(parser.tiddlers), "tiddlers parsed"
-    for i,t in enumerate(parser.tiddlers):
-        print i, t["title"]
 
+    import os.path as P
+    import os
+
+    if not P.isdir(opts.dest):
+        os.makedirs(opts.dest)
+
+    for t in parser.tiddlers:
+        fname = P.join(opts.dest, t["title"]) + ".txt"
+        fout = open(fname, "w")
+        fout.write(t["text"])
+        fout.close()
+        print "wrote [%s] to [%s]" % (t["title"], fname)
+    
 if __name__ == "__main__":
-    main()
+    import sys
+    sys.exit(main())
