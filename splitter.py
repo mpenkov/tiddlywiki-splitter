@@ -1,3 +1,4 @@
+"""Splits a TiddlyWiki into individual text files."""
 from sgmllib import SGMLParser
 
 class WikiParser(SGMLParser):
@@ -48,7 +49,7 @@ def main():
     for t in parser.tiddlers:
         fname = P.join(opts.dest, t["title"]) + ".txt"
         fout = open(fname, "w")
-        fout.write(t["text"])
+        fout.write("\n".join([t["title"], t["text"], "tags: " + t["tags"], ""]))
         fout.close()
         print "wrote [%s] to [%s]" % (t["title"], fname)
     
