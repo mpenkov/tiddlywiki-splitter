@@ -1,6 +1,8 @@
 """Splits a TiddlyWiki into individual text files."""
 from sgmllib import SGMLParser
 
+import codecs
+
 class WikiParser(SGMLParser):
     """Parses a TiddlyWiki into individual tiddlers."""
     def __init__(self):
@@ -21,7 +23,6 @@ class WikiParser(SGMLParser):
 
     def end_div(self):
         if self.current_tiddler:
-            self.current_tiddler["text"] = "".join(self.current_tiddler["text"])
             self.tiddlers.append(self.current_tiddler)
             self.current_tiddler = None
 
@@ -33,6 +34,7 @@ def main():
     from optparse import OptionParser
     parser = OptionParser(usage="%prog [options] wiki.html")
     parser.add_option("-d", "--destination", dest="dest", default="txt", help="the directory to write text files to")
+    parser.add_option("-v", "--vim-notes", dest="vim_notes", default=False, action="store_true", help="format output for vim-notes.")
     opts, args = parser.parse_args()
     if not args:
         parser.error("you must specify the path to the TiddlyWiki file")
@@ -42,14 +44,19 @@ def main():
 
     import os.path as P
     import os
+    from formatter import vim_notes_format
 
     if not P.isdir(opts.dest):
         os.makedirs(opts.dest)
 
     for t in parser.tiddlers:
         fname = P.join(opts.dest, t["title"]) + ".txt"
-        fout = open(fname, "w")
-        fout.write("\n".join([t["title"], t["text"], "tags: " + t["tags"], ""]))
+        fout = codecs.open(fname, "w", "utf-8")
+        title, text, tags = t["title"], t["text"], t["tags"]
+        if opts.vim_notes:
+            fout.write(vim_notes_format(title, text, tags))
+        else:
+            fout.write("\n".join([title] + text + ["tags: " + tags ]))
         fout.close()
         print "wrote [%s] to [%s]" % (t["title"], fname)
     

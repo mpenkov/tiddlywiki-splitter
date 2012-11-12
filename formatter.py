@@ -1,14 +1,11 @@
 """Attempts to convert TiddlyWiki markup to notes.vim markup.
 WARNING: will overwrite the file it is processing."""
+import re
 
-if __name__ == "__main__":
-    import sys
-    import re
-    if len(sys.argv) != 2:
-        print >> sys.stderr, "usage: %s filename.txt" % __file__
-        sys.exit(1)
-
-    lines = open(sys.argv[1]).read().strip().split("\n")
+def vim_notes_format(title, lines, raw_txt):
+    """title    The title of the tiddler
+       lines    A list of lines representing the tiddler body
+       raw_txt  The tags as a string."""
     for i,line in enumerate(lines):
         # numbered lists (convert them to bulleted lists for simplicity)
         line = re.sub("^###", u"        \u2022", line)
@@ -31,7 +28,6 @@ if __name__ == "__main__":
     # Handle tags.
     #
     try:
-        raw_txt = filter(lambda l: l.startswith("tags:"), lines)[0][6:]
         raw_txt = raw_txt.replace("[[", " [[ ").replace("]]", " ]] ")
         tokens = filter(None, raw_txt.split(" "))
         tags = list()
@@ -46,14 +42,8 @@ if __name__ == "__main__":
                 tags.append("_".join(tokens[start:i]))
             elif not escape:
                 tags.append(t)
-
-        for i,l in enumerate(lines):
-            if l.startswith("tags:"):
-                lines[i] = " ".join(map(lambda t: "@%s" % t, tags))
+        lines.append(" ".join(map(lambda t: "@%s" % t, tags)))
     except IndexError:
         pass
 
-    import codecs
-    fout = codecs.open(sys.argv[1], "w", "utf-8")
-    fout.write("\n".join(lines))
-    fout.close()
+    return "\n".join(lines)
